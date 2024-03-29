@@ -1,105 +1,86 @@
 #include <iostream>
 #include <vector>
-#include <string>
 
-using namespace std;
-
-struct Task {
-    string description;
-    bool completed;
-
-    Task(const string& desc) : description(desc), completed(false) {}
-};
-
-class TodoList {
-private:
-    vector<Task> tasks;
-
-public:
-    void addTask(const string& description) {
-        tasks.push_back(Task(description));
-        cout << "Task added: " << description << endl;
-    }
-
-    void viewTasks() {
-        if (tasks.empty()) {
-            cout << "No tasks available!" << endl;
-            return;
+void print_board(const std::vector<std::vector<char>>& board) {
+    for (const auto& row : board) {
+        for (char cell : row) {
+            std::cout << cell << " | ";
         }
+        std::cout << "\n";
+    }
+}
 
-        cout << "Tasks:" << endl;
-        for (size_t i = 0; i < tasks.size(); ++i) {
-            cout << i + 1 << ". " << tasks[i].description;
-            if (tasks[i].completed)
-                cout << " - Completed";
-            cout << endl;
+// Function to check if a player has won
+bool check_win(const std::vector<std::vector<char>>& board, char player) {
+    for (const auto& row : board) {
+        if (std::all_of(row.begin(), row.end(), [&](char c) {return c == player; })) {
+            return true;
         }
     }
-
-    void markTaskCompleted(size_t index) {
-        if (index >= 1 && index <= tasks.size()) {
-            tasks[index - 1].completed = true;
-            cout << "Task marked as completed: " << tasks[index - 1].description << endl;
-        } else {
-            cout << "Invalid task index!" << endl;
+    for (size_t col = 0; col < 3; ++col) {
+        if (board[0][col] == player && board[1][col] == player && board[2][col] == player) {
+            return true;
         }
     }
+    if (board[0][0] == player && board[1][1] == player && board[2][2] == player) {
+        return true;
+    }
+    if (board[0][2] == player && board[1][1] == player && board[2][0] == player) {
+        return true;
+    }
+    return false;
+}
 
-    void removeTask(size_t index) {
-        if (index >= 1 && index <= tasks.size()) {
-            cout << "Task removed: " << tasks[index - 1].description << endl;
-            tasks.erase(tasks.begin() + index - 1);
-        } else {
-            cout << "Invalid task index!" << endl;
+bool check_draw(const std::vector<std::vector<char>>& board) {
+    for (const auto& row : board) {
+        if (std::find_if(row.begin(), row.end(), [](char c) {return c == ' '; }) != row.end()) {
+            return false;
         }
     }
-};
+    return true;
+}
+
+char switch_player(char current_player) {
+    return current_player == 'X' ? 'O' : 'X';
+}
 
 int main() {
-    TodoList todoList;
-    int choice;
-    string taskDescription;
+    std::vector<std::vector<char>> board(3, std::vector<char>(3, ' '));
+    char current_player = 'X';
+    bool game_on = true;
 
-    do {
-        cout << "\n=== Todo List Manager ===" << endl;
-        cout << "1. Add Task" << endl;
-        cout << "2. View Tasks" << endl;
-        cout << "3. Mark Task as Completed" << endl;
-        cout << "4. Remove Task" << endl;
-        cout << "5. Exit" << endl;
-        cout << "Enter your choice: ";
-        cin >> choice;
-
-        switch (choice) {
-            case 1:
-                cout << "Enter task description: ";
-                cin.ignore();
-                getline(cin, taskDescription);
-                todoList.addTask(taskDescription);
-                break;
-            case 2:
-                todoList.viewTasks();
-                break;
-            case 3:
-                size_t completedIndex;
-                cout << "Enter task index to mark as completed: ";
-                cin >> completedIndex;
-                todoList.markTaskCompleted(completedIndex);
-                break;
-            case 4:
-                size_t removeIndex;
-                cout << "Enter task index to remove: ";
-                cin >> removeIndex;
-                todoList.removeTask(removeIndex);
-                break;
-            case 5:
-                cout << "Exiting program. Goodbye!" << endl;
-                break;
-            default:
-                cout << "Invalid choice! Please enter a number between 1 and 5." << endl;
-                break;
+    while (game_on) {
+        print_board(board);
+        if (check_win(board, current_player)) {
+            std::cout << "Player " << current_player << " wins!\n";
+            game_on = false;
+        } else if (check_draw(board)) {
+            std::cout << "It's a draw!\n";
+            game_on = false;
+        } else {
+            int row, col;
+            do {
+                std::cout << "Player " << current_player << ", enter your move (row and column separated by space): ";
+                std::cin >> row >> col;
+                --row; --col;
+            } while (board[row][col] != ' ');
+            board[row][col] = current_player;
+            current_player = switch_player(current_player);
         }
-    } while (choice != 5);
+    }
+
+    print_board(board);
+
+    bool play_again = false;
+    while (!play_again) {
+        std::cout << "Do you want to play again? (yes/no): ";
+        char response[10];
+        std::cin.getline(response, 10);
+        play_again = (response[0] == 'y' || response[0] == 'Y');
+        if (play_again) {
+            board = std::vector<std::vector<char>>(3, std::vector<char>(3, ' '));
+        }
+    }
 
     return 0;
 }
